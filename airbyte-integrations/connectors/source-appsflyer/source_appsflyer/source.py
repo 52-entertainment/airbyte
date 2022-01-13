@@ -75,10 +75,7 @@ class AppsflyerStream(HttpStream, ABC):
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         fields = add(self.main_fields, self.additional_fields) if self.additional_fields else self.main_fields
         csv_data = map(lambda x: x.decode("utf-8"), response.iter_lines())
-        reader = csv.DictReader(csv_data, fields)
-
-        # Skip CSV Header
-        next(reader, {})
+        reader = csv.DictReader(csv_data)
 
         yield from reader
 
@@ -127,7 +124,8 @@ class AppsflyerStream(HttpStream, ABC):
 
 # Basic incremental stream
 class IncrementalAppsflyerStream(AppsflyerStream, ABC):
-    intervals = 60
+    # default is 90 days
+    intervals = 24 * 90 
 
     def get_updated_state(self, current_stream_state: MutableMapping[str, Any], latest_record: Mapping[str, Any]) -> Mapping[str, Any]:
         try:
@@ -162,7 +160,7 @@ class IncrementalAppsflyerStream(AppsflyerStream, ABC):
 
     def chunk_date_range(self, start_date: datetime) -> List[Mapping[str, any]]:
         dates = []
-        delta = timedelta(days=self.intervals)
+        delta = timedelta(hours=self.intervals)
         while start_date <= self.end_date:
             end_date = self.get_date(start_date + delta, self.end_date, min)
             dates.append({self.cursor_field: start_date, self.cursor_field + "_end": end_date})
@@ -187,7 +185,7 @@ class RawDataMixin:
 
 
 class AggregateDataMixin:
-    cursor_field = "date"
+    cursor_field = "Date"
 
     def request_params(
         self, stream_state: Mapping[str, Any], stream_slice: Mapping[str, any] = None, next_page_token: Mapping[str, Any] = None
@@ -210,8 +208,9 @@ class RetargetingMixin:
 
 
 class InAppEvents(RawDataMixin, IncrementalAppsflyerStream):
-    intervals = 31
-    cursor_field = "event_time"
+    # Split large response in short temporal batch to avoid API request limits
+    intervals = 6
+    cursor_field = "Event Time"
 
     def path(
         self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None
@@ -230,7 +229,7 @@ class UninstallEvents(RawDataMixin, IncrementalAppsflyerStream):
 
 
 class Installs(RawDataMixin, IncrementalAppsflyerStream):
-    cursor_field = "install_time"
+    cursor_field = "Install Time"
 
     def path(
         self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None

@@ -1,0 +1,25 @@
+{
+  "streams": [
+    {
+      "stream": {
+        "name": "revenue_report",
+        "json_schema": {
+          "type": "object",
+          "properties": {
+            "day": {
+              "type": "string"
+            },
+            "package_name": {
+              "type": "string" 
+            }
+          }
+        },
+        "supported_sync_modes": ["full_refresh", "incremental"],
+        "source_defined_cursor": true,
+        "default_cursor_field": ["day"]
+      },
+      "sync_mode": "incremental",
+      "destination_sync_mode": "overwrite"
+    }
+  ]
+}
