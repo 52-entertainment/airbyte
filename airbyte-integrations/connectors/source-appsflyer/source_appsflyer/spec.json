@@ -27,6 +27,33 @@
         "description": "Time zone in which date times are stored. The project timezone may be found in the App settings in the AppsFlyer console.",
         "default": "UTC",
         "examples": ["US/Pacific", "UTC"]
+      },
+      "custom_filter": {
+        "type": "array",
+        "title": "Custom Raw Data Filter (Optional)",
+        "items": {
+          "type": "object",
+          "properties": {
+            "report_name": {
+              "type": "string",
+              "title": "Raw data report",
+              "description": "The Report name in Appsflyer Pull API raw-data list. See <a href\"https://support.appsflyer.com/hc/en-us/articles/360007530258-Using-Pull-API-raw-data\"> this documentation</a> to get more information.",
+              "enum": [
+                "Installs",
+                "In-app events",
+                "Uninstall"
+              ]
+            },
+            "query": {
+              "type": "string",
+              "title": "Custom filter",
+              "description": "A custom defined API filter for building the report. Select multiple events by using a comma-separated list.",
+              "examples": [
+                "af_purchase,ftd"
+              ]
+            }
+          }
+        }
       }
     }
   }

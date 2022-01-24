@@ -37,7 +37,7 @@
                 "type": "string",
                 "description": "Indicate which columns you want reported. See the <a href=\"https://dash.applovin.com/documentation/mediation/reporting-api/max-ad-revenue\">docs</a> for more information.",
                 "default": "day,package_name,application,platform,store_id,device_type,country,impressions,ad_format,estimated_revenue,ecpm,network,network_placement,max_placement,max_ad_unit",
-                "examples": ["day,package_name,application,platform,store_id,device_type,country,impressions,ad_format,estimated_revenue,ecpm"]
+                "examples": ["day,package_name,application,platform,country,impressions,estimated_revenue,ecpm"]
               }
             },
             "order": 0

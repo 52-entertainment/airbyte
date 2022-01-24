@@ -39,13 +39,14 @@ class AppsflyerStream(HttpStream, ABC):
     transformer: TypeTransformer = TypeTransformer(TransformConfig.DefaultSchemaNormalization | TransformConfig.CustomSchemaNormalization)
 
     def __init__(
-        self, app_id: str, api_token: str, timezone: str, start_date: Union[date, str] = None, end_date: Union[date, str] = None, **kwargs
+        self, app_id: str, api_token: str, timezone: str, start_date: Union[date, str] = None, end_date: Union[date, str] = None, custom_filter: dict() = None, **kwargs
     ):
         super().__init__(**kwargs)
         self.app_id = app_id
         self.api_token = api_token
         self.start_date = start_date
         self.end_date = end_date
+        self.custom_filter = {item['report_name'] : item['query'] for item in custom_filter} if custom_filter else None
         self.timezone = pendulum.timezone(timezone)
 
     @property
@@ -171,6 +172,7 @@ class IncrementalAppsflyerStream(AppsflyerStream, ABC):
 class RawDataMixin:
     main_fields = fields.raw_data.main_fields
     additional_fields = fields.raw_data.additional_fields
+    filter_field = None
 
     def request_params(
         self, stream_state: Mapping[str, Any], stream_slice: Mapping[str, any] = None, next_page_token: Mapping[str, Any] = None
@@ -181,6 +183,8 @@ class RawDataMixin:
         # use currency set in the app settings to align with aggregate api currency.
         params["currency"] = "preferred"
 
+        if self.filter_field and self.custom_filter and self.filter_field in self.custom_filter:
+            params["event_name"] = self.custom_filter[self.filter_field]
         return params
 
 
@@ -209,8 +213,9 @@ class RetargetingMixin:
 
 class InAppEvents(RawDataMixin, IncrementalAppsflyerStream):
     # Split large response in short temporal batch to avoid API request limits
-    intervals = 6
     cursor_field = "Event Time"
+    filter_field = "In-app events"
+    intervals = 24
 
     def path(
         self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None
@@ -221,6 +226,7 @@ class InAppEvents(RawDataMixin, IncrementalAppsflyerStream):
 class UninstallEvents(RawDataMixin, IncrementalAppsflyerStream):
     cursor_field = "event_time"
     additional_fields = fields.uninstall_events.additional_fields
+    filter_field = "Uninstall"
 
     def path(
         self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None
@@ -230,6 +236,7 @@ class UninstallEvents(RawDataMixin, IncrementalAppsflyerStream):
 
 class Installs(RawDataMixin, IncrementalAppsflyerStream):
     cursor_field = "Install Time"
+    filter_field = "Installs"
 
     def path(
         self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None

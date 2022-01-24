@@ -58,7 +58,6 @@ class ApplovinMaxStream(HttpStream, ABC):
         return params
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
-        toto = self.response_format
         csv_data = map(lambda x: x.decode("utf-8"), response.iter_lines())
         reader = csv.DictReader(csv_data)
 
